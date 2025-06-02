@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Wash and Fold",
+    "price": 15000
+  },
+  {
+    "name": "Hang Dry",
+    "price": 12000
+  },
+  {
+    "name": "Dry Cleaning",
+    "price": 30000
+  }
+]
