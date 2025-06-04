@@ -1,17 +1,10 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class Order extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // define association here
-        Order.belongsTo(models.User, { foreignKey: 'userId' });
+      Order.belongsTo(models.User, { foreignKey: 'userId' });
         Order.hasOne(models.Review, { foreignKey: 'orderId' });
         Order.belongsToMany(models.Category, {
           through: models.OrderCategory,
@@ -19,15 +12,37 @@ module.exports = (sequelize, DataTypes) => {
           otherKey: 'categoryId'
   });
     }
+
+    static estimateDaysLeft(createdAt, weight) {
+      const now = new Date();
+      const orderDate = new Date(createdAt);
+      const daysPassed = Math.floor((now - orderDate) / (1000 * 60 * 60 * 24));
+
+      let baseDays = 3;
+      if (weight > 10) baseDays += 2;
+      else if (weight > 5) baseDays += 1;
+
+      const daysLeft = baseDays - daysPassed;
+      return Math.max(0, daysLeft);
+    }
+
+    static formatTimeRemaining(daysLeft) {
+      if (daysLeft === 0) return 'Ready for pickup';
+      else if (daysLeft === 1) return '1 day remaining';
+      else return `${daysLeft} days remaining`;
+    }
   }
+
   Order.init({
     status: DataTypes.STRING,
     totalPrice: DataTypes.INTEGER,
-    distance: DataTypes.INTEGER,
-    userId: DataTypes.INTEGER
+    distance: DataTypes.FLOAT,
+    userId: DataTypes.INTEGER,
+    weight: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'Order',
   });
+
   return Order;
 };

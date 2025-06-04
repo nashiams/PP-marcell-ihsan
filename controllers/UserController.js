@@ -1,113 +1,149 @@
-const bcrypt = require('bcryptjs');
-const { User } = require('../models');
+const { User, Category, Review, Order } = require('../models');
 const { Op } = require('sequelize');
+const bcrypt = require('bcryptjs');
 
 class UserController {
+  static async home(req, res) {
+    try {
+      const { search, sortBy } = req.query;
+      
+      // Build where clause for search
+      let categoryWhere = {};
+      if (search) {
+        categoryWhere = {
+          name: { [Op.iLike]: `%${search}%` }
+        };
+      }
+      
+      // Fetch categories with search
+      const categories = await Category.findAll({
+        where: categoryWhere,
+        order: sortBy === 'price_asc' ? [['price', 'ASC']] : 
+               sortBy === 'price_desc' ? [['price', 'DESC']] :
+               [['name', 'ASC']]
+      });
+      
+      // Fetch all reviews sorted by rating DESC with user data
+      const reviews = await Review.findAll({
+        include: [{
+          model: User,
+          attributes: ['username']
+        }],
+        order: [['rating', 'DESC']]
+      });
 
-    static async home(req, res) {
-        try {
-            res.render('home')
-        } catch (error) {
-            res.send(error)
-        }
-    }
-
-    static async registerForm(req,res) {
-        try {
-             const error = req.query.error || null;
-             res.render('registerForm', { error });
-        } catch (error) {
-            res.send(error)
-        }
-    }
-
-    static async postRegister(req, res) {
-        try {
-            const { username, email, password, role, phone } = req.body;
-
-            await User.create({
-            username,
-            email,
-            password, // hashed in the model hook
-            role,
-            phone
-            });
-
-            res.redirect('/login');
-        } catch (error) {
-            if (error.name === 'SequelizeUniqueConstraintError') {
-                return res.redirect('/register?error=' + encodeURIComponent('Email already in use'));
-                }
-
-                console.error(error);
-                res.redirect('/register?error=' + encodeURIComponent('Internal server error'));
-        }
-    }
-
-    static async loginForm(req,res) {
-        try {
-            const error = req.query.error || null;
-            res.render('loginForm', { error });
-        } catch (error) {
-            res.send(error)
-        }
-    }
-
-    static async postLogin(req, res) {
-        const { identifier, password } = req.body;
-
-        try {
-            const user = await User.findOne({
-            where: {
-                    [Op.or]: [
-                        { email: identifier },
-                        { username: identifier }
-                    ]
-                }
-            });
-
-            if (!user) {
-            return res.redirect('/login?error=Invalid+username%2Femail+or+password');
-            }
-
-            const isValid = bcrypt.compareSync(password, user.password);
-            if (!isValid) {
-            return res.redirect('/login?error=Invalid+username%2Femail+or+password');
-            }
-
-            req.session.userId = user.id;
-            req.session.role = user.role;
-            res.redirect('/dashboard');
-        } catch (error) {
-            console.error(error);
-            res.redirect('/login?error=Internal+server+error');
-        }
-    }
-
-    static async dashboard(req, res) {
-        try {
-            res.render('dashboard', {
+      let userCompletedOrders = [];
+      
+      // If user is logged in, fetch their completed orders
+      if (req.session.userId) {
+        userCompletedOrders = await Order.findAll({
+          where: {
             userId: req.session.userId,
-            role: req.session.role
-            })
-        } catch (error) {
-            res.send(error)
+            status: 'Completed'
+          },
+          include: [{
+            model: Category,
+            through: { attributes: ['quantity'] }
+          }, {
+            model: Review,
+            required: false
+          }]
+        });
+      }
+
+      res.render('home', {
+        categories,
+        reviews,
+        userCompletedOrders,
+        isLoggedIn: !!req.session.userId,
+        username: req.session.username,
+        search: search || '',
+        sortBy: sortBy || ''
+      });
+    } catch (error) {
+      console.error('Home error:', error);
+      res.status(500).send('Server Error');
+    }
+  }
+
+  static registerForm(req, res) {
+    res.render('register', { errors: [] });
+  }
+
+  static async postRegister(req, res) {
+    try {
+        const { username, email, password, role, phone } = req.body;
+
+        // Do NOT hash here — the hook will handle it
+        await User.create({
+        username,
+        email,
+        password, // plain password
+        role,
+        phone
+        });
+
+        res.redirect('/login?success=Registration successful');
+    } catch (error) {
+        console.error('Register error:', error);
+        let errors = [];
+
+        if (error.name === 'SequelizeValidationError') {
+        errors = error.errors.map(err => err.message);
+        } else if (error.name === 'SequelizeUniqueConstraintError') {
+        errors = ['Username or email already exists'];
+        } else {
+        errors = ['Registration failed'];
         }
+
+        res.render('register', { errors });
+    }
     }
 
-    static async logout(req, res) {
-        try {
-            req.session.destroy(err => {
-            if (err) return res.send(err);
-            res.redirect('/login?msg=Logged out successfully');
-            })
-        } catch (error) {
-            res.send(error)
-        }
+  static loginForm(req, res) {
+    const error = req.query.error;
+    const success = req.query.success;
+    res.render('login', { error, success });
+  }
+
+  static async postLogin(req, res) {
+    try {
+      const { usernameOrEmail, password } = req.body;
+      
+      // Find user by username or email
+      const user = await User.findByUsernameOrEmail(usernameOrEmail);
+      
+      if (!user) {
+        return res.render('login', { error: 'User not found' });
+      }
+
+      // Check password
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      
+      if (!isValidPassword) {
+        return res.render('login', { error: 'Invalid password' });
+      }
+
+      // Set session
+      req.session.userId = user.id;
+      req.session.username = user.username;
+      req.session.role = user.role;
+
+      res.redirect('/');
+    } catch (error) {
+      console.error('Login error:', error);
+      res.render('login', { error: 'Login failed' });
     }
+  }
 
-    
-
+  static logout(req, res) {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Logout error:', err);
+      }
+      res.redirect('/login');
+    });
+  }
 }
 
-module.exports = UserController
+module.exports = UserController;
