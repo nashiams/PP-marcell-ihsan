@@ -5,7 +5,7 @@ const session = require('express-session');
 // Import controllers
 const UserController = require('./controllers/UserController');
 const OrderController = require('./controllers/OrderController');
-// const ReviewController = require('./controllers/ReviewController');
+const ReviewController = require('./controllers/ReviewController');
 
 
 
@@ -62,8 +62,8 @@ app.get('/status', isAuthenticated, isBuyer, OrderController.status);
 app.post('/order/:id/done', isAuthenticated, isBuyer, OrderController.markAsDone);
 
 // Review Routes
-// app.get('/review/:orderId', isAuthenticated, isBuyer, ReviewController.reviewForm);
-// app.post('/review/:orderId', isAuthenticated, isBuyer, ReviewController.postReview);
+app.get('/review/:orderId', isAuthenticated, isBuyer, ReviewController.reviewForm);
+app.post('/review/:orderId', isAuthenticated, isBuyer, ReviewController.postReview);
 
 // Start server
 app.listen(PORT, () => {

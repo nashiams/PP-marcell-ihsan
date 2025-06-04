@@ -38,7 +38,6 @@ module.exports = (sequelize, DataTypes) => {
     totalPrice: DataTypes.INTEGER,
     distance: DataTypes.FLOAT,
     userId: DataTypes.INTEGER,
-    weight: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'Order',

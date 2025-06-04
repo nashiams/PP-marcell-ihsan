@@ -37,7 +37,7 @@ class ReviewController {
       });
     } catch (error) {
       console.error('Review form error:', error);
-      res.status(500).send('Server Error');
+      res.redirect('/?error=Unable to load review form');
     }
   }
 
@@ -47,6 +47,15 @@ class ReviewController {
       const userId = req.session.userId;
       const { text, rating } = req.body;
 
+      // Validation
+      const errors = [];
+      if (!rating || rating === '') {
+        errors.push('Please select a rating');
+      }
+      if (!text || text.trim() === '') {
+        errors.push('Please write a review');
+      }
+
       // Verify order exists and belongs to user
       const order = await Order.findOne({
         where: {
@@ -55,6 +64,9 @@ class ReviewController {
           status: 'Completed'
         },
         include: [{
+          model: Category,
+          through: { attributes: ['quantity'] }
+        }, {
           model: Review,
           required: false
         }]
@@ -69,9 +81,17 @@ class ReviewController {
         return res.redirect('/?error=Order already reviewed');
       }
 
+      // If there are validation errors, re-render the form
+      if (errors.length > 0) {
+        return res.render('reviewForm', { 
+          order,
+          errors
+        });
+      }
+
       // Create review
       await Review.create({
-        text,
+        text: text.trim(),
         rating: parseInt(rating),
         userId,
         orderId: parseInt(orderId)
