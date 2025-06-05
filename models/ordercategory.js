@@ -14,10 +14,32 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   OrderCategory.init({
-    orderId: DataTypes.STRING,
-    categoryId: DataTypes.INTEGER,
-    quantity: DataTypes.INTEGER
-  }, {
+  orderId: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      notEmpty: true
+    }
+  },
+  categoryId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      isInt: true
+    }
+  },
+  quantity: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      isInt: true,
+      min: 1
+    }
+  }
+}, {
     sequelize,
     modelName: 'OrderCategory',
   });

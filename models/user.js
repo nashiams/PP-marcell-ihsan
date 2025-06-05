@@ -12,6 +12,16 @@ module.exports = (sequelize, DataTypes) => {
       User.hasMany(models.Review, { foreignKey: 'userId' });
     }
 
+    static async findAdmin() {
+      return await this.findAll({
+        where: {
+          role: 'admin'
+        },
+        attributes: ['username', 'phone'] // Only return these fields
+      });
+    }
+  
+
     /**
      *  Static method to find by username or email
      */
@@ -29,19 +39,49 @@ module.exports = (sequelize, DataTypes) => {
 
   // Init model
   User.init({
-    username: DataTypes.STRING,
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true
-      }
-    },
-    password: DataTypes.STRING,
-    role: DataTypes.STRING,
-    phone: DataTypes.INTEGER
-  }, {
+  username: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      notEmpty: true
+    }
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      notNull: true,
+      notEmpty: true,
+      isEmail: true
+    }
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      notEmpty: true
+    }
+  },
+  role: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      notEmpty: true
+    }
+  },
+  phone: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      isInt: true
+    }
+  }
+}, {
     sequelize,
     modelName: 'User',
     hooks: {

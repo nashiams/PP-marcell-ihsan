@@ -34,14 +34,43 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   Order.init({
-    status: DataTypes.STRING,
-    totalPrice: DataTypes.INTEGER,
-    distance: DataTypes.FLOAT,
-    userId: DataTypes.INTEGER,
-  }, {
+  status: {
+    type: DataTypes.STRING,
+  },
+  totalPrice: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      isInt: true
+    }
+  },
+  distance: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      isFloat: true
+    }
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      isInt: true
+    }
+  }
+}, {
     sequelize,
     modelName: 'Order',
   });
+
+  Order.addHook('beforeCreate', (order, options) => {
+  if (!order.status) {
+    order.status = 'Processing'; // default value if not provided
+  }
+});
 
   return Order;
 };

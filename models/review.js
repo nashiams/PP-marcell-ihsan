@@ -16,11 +16,41 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Review.init({
-    text: DataTypes.STRING,
-    rating: DataTypes.INTEGER,
-    userId: DataTypes.INTEGER,
-    orderId: DataTypes.INTEGER
-  }, {
+  text: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      notEmpty: true
+    }
+  },
+  rating: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      isInt: true,
+      min: 1,
+      max: 5
+    }
+  },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      isInt: true
+    }
+  },
+  orderId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    validate: {
+      notNull: true,
+      isInt: true
+    }
+  }
+}, {
     sequelize,
     modelName: 'Review',
   });

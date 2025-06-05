@@ -46,7 +46,6 @@ class OrderController {
 
       // 4. Create order
       const order = await Order.create({
-        status: 'Processing',
         totalPrice,
         distance,
         userId
@@ -135,6 +134,25 @@ class OrderController {
       res.redirect('/status?error=Failed to update order');
     }
   }
+
+  static async delete(req, res) {
+    try {
+      const id = req.params.id;
+
+  
+      await OrderCategory.destroy({ where: { orderId: id } });
+
+      await Order.destroy({
+        where: { id }
+      });
+
+      res.redirect('/order?deleted=true');
+    } catch (err) {
+      res.send(err.message);
+    }
+  }
+
+
 }
 
 module.exports = OrderController;

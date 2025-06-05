@@ -78,7 +78,7 @@ class UserController {
         await User.create({
         username,
         email,
-        password, // plain password
+        password, 
         role,
         phone
         });
@@ -143,6 +143,17 @@ class UserController {
       }
       res.redirect('/login');
     });
+  }
+
+//tambahan - liatin admin 
+  static async showAdmins(req, res) {
+    try {
+      const admins = await User.findAdmin();
+      res.render('adminList', { admins });
+    } catch (error) {
+      console.error('Error fetching admins:', error);
+      res.status(500).send('Internal Server Error');
+    }
   }
 }
 
