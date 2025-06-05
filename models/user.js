@@ -21,10 +21,6 @@ module.exports = (sequelize, DataTypes) => {
       });
     }
   
-
-    /**
-     *  Static method to find by username or email
-     */
     static async findByUsernameOrEmail(value) {
       return await User.findOne({
         where: {
@@ -43,8 +39,8 @@ module.exports = (sequelize, DataTypes) => {
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      notNull: true,
-      notEmpty: true
+      notNull: { msg: "Username cannot be empty" },
+      notEmpty: { msg: "Username cannot be empty" }
     }
   },
   email: {
@@ -52,17 +48,21 @@ module.exports = (sequelize, DataTypes) => {
     allowNull: false,
     unique: true,
     validate: {
-      notNull: true,
-      notEmpty: true,
-      isEmail: true
+      notNull: { msg: "Email cannot be null" },
+      notEmpty: { msg: "Email cannot be empty" },
+      isEmail: { msg: "Email must be valid" }
     }
   },
   password: {
     type: DataTypes.STRING,
     allowNull: false,
     validate: {
-      notNull: true,
-      notEmpty: true
+      notNull: { msg: "Password cannot be null" },
+      notEmpty: { msg: "Password cannot be empty" },
+      len: {
+        args: [8],
+        msg: "Password must be at least 8 characters"
+      },
     }
   },
   role: {

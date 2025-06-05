@@ -68,7 +68,7 @@ module.exports = (sequelize, DataTypes) => {
 
   Order.addHook('beforeCreate', (order, options) => {
   if (!order.status) {
-    order.status = 'Processing'; // default value if not provided
+    order.status = 'Processing'; 
   }
 });
 
